@@ -1,0 +1,1722 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/ajramos202/ajramos202/blob/main/NLP%20Bloomtech%20Assignment\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "f95c5acf8c3e89e0b0e482c04e0b8abf",
+          "grade": false,
+          "grade_id": "cell-e98be1092b48b377",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "jJyXkmX1B3Z8"
+      },
+      "source": [
+        "# Sprint Challenge\n",
+        "## *Data Science Sprint 13*\n",
+        "\n",
+        "After a sprint of Natural Language Processing, you've learned some cool new stuff: how to process text, how turn text into vectors, and how to model topics from documents. Apply your newly acquired skills to one of the most famous NLP datasets out there: [Yelp](https://www.yelp.com/dataset). As part of the job selection process, some of my friends have been asked to create analysis of this dataset, so I want to empower you to have a head start.  \n",
+        "\n",
+        "The real dataset is massive (almost 8 gigs uncompressed). The data is sampled for you to something more manageable for the Sprint Challenge. You can analyze the full dataset as a stretch goal or after the sprint challenge.\n",
+        "\n",
+        "## Challenge Objectives\n",
+        "Successfully complete all these objectives to earn full credit.\n",
+        "\n",
+        "**Successful completion is defined as passing all the unit tests in each objective.**  \n",
+        "\n",
+        "There are 8 total possible points in this sprint challenge.\n",
+        "\n",
+        "\n",
+        "There are more details on each objective further down in the notebook.*\n",
+        "* <a href=\"#p1\">Part 1</a>: Write a function to tokenize the yelp reviews\n",
+        "* <a href=\"#p2\">Part 2</a>: Create a vector representation of those tokens\n",
+        "* <a href=\"#p3\">Part 3</a>: Use your tokens in a classification model on Yelp rating\n",
+        "* <a href=\"#p4\">Part 4</a>: Estimate & Interpret a topic model of the Yelp reviews\n",
+        "\n",
+        "____\n",
+        "\n",
+        "# Before you submit your notebook you must first\n",
+        "\n",
+        "1) Restart your notebook's Kernel\n",
+        "\n",
+        "2) Run all cells sequentially, from top to bottom, so that cell numbers are sequential numbers (i.e. 1,2,3,4,5...)\n",
+        "- Easiest way to do this is to click on the **Cell** tab at the top of your notebook and select **Run All** from the drop down menu.\n",
+        "\n",
+        "3) **Comment out the cell that generates a pyLDAvis visual in objective 4 (see instructions in that section).**\n",
+        "____"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "a0fb09b9e122fc2f2a2baae91a22a818",
+          "grade": false,
+          "grade_id": "cell-e6c3d2173420a581",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "saTV0l_AB3aB"
+      },
+      "source": [
+        "### Part 0: Import Necessary Packages\n",
+        "For this section, you will need to import:\n",
+        "- `spacy`\n",
+        "- `Pandas`\n",
+        "- `Seaborn`\n",
+        "- `Matplotlib`\n",
+        "- `NearestNeighbors`\n",
+        "- `Pipeline`\n",
+        "- `TfidfVectorizer`\n",
+        "- `KneighborsClassifier`\n",
+        "- `GridSearchCV`\n",
+        "- `corpora`\n",
+        "- `LdaModel`\n",
+        "- `gensim`\n",
+        "- `re`\n",
+        "\n",
+        "> **Note: This assignment is optimized to work with these specific packages. You can use import different packages, but note that this may affect how CodeGrade works, and may cause CodeGrade to fail.**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "pip install pyLDAvis"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ijXkWmNogCda",
+        "outputId": "4afdee93-d7de-49c3-d694-15db3245a76b"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Collecting pyLDAvis\n",
+            "  Downloading pyLDAvis-3.4.1-py3-none-any.whl (2.6 MB)\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m2.6/2.6 MB\u001b[0m \u001b[31m9.0 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[?25hRequirement already satisfied: numpy>=1.24.2 in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (1.25.2)\n",
+            "Requirement already satisfied: scipy in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (1.11.4)\n",
+            "Requirement already satisfied: pandas>=2.0.0 in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (2.0.3)\n",
+            "Requirement already satisfied: joblib>=1.2.0 in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (1.4.0)\n",
+            "Requirement already satisfied: jinja2 in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (3.1.3)\n",
+            "Requirement already satisfied: numexpr in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (2.10.0)\n",
+            "Collecting funcy (from pyLDAvis)\n",
+            "  Downloading funcy-2.0-py2.py3-none-any.whl (30 kB)\n",
+            "Requirement already satisfied: scikit-learn>=1.0.0 in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (1.2.2)\n",
+            "Requirement already satisfied: gensim in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (4.3.2)\n",
+            "Requirement already satisfied: setuptools in /usr/local/lib/python3.10/dist-packages (from pyLDAvis) (67.7.2)\n",
+            "Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.10/dist-packages (from pandas>=2.0.0->pyLDAvis) (2.8.2)\n",
+            "Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=2.0.0->pyLDAvis) (2023.4)\n",
+            "Requirement already satisfied: tzdata>=2022.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=2.0.0->pyLDAvis) (2024.1)\n",
+            "Requirement already satisfied: threadpoolctl>=2.0.0 in /usr/local/lib/python3.10/dist-packages (from scikit-learn>=1.0.0->pyLDAvis) (3.5.0)\n",
+            "Requirement already satisfied: smart-open>=1.8.1 in /usr/local/lib/python3.10/dist-packages (from gensim->pyLDAvis) (6.4.0)\n",
+            "Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.10/dist-packages (from jinja2->pyLDAvis) (2.1.5)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.10/dist-packages (from python-dateutil>=2.8.2->pandas>=2.0.0->pyLDAvis) (1.16.0)\n",
+            "Installing collected packages: funcy, pyLDAvis\n",
+            "Successfully installed funcy-2.0 pyLDAvis-3.4.1\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 3,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "8d3d0719eecd5609256125d84cc4218a",
+          "grade": false,
+          "grade_id": "cell-b29df5c5bfb8c0d8",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "VXZiLjr8B3aC"
+      },
+      "outputs": [],
+      "source": [
+        "# YOUR CODE HERE\n",
+        "import spacy\n",
+        "from spacy.tokenizer import Tokenizer\n",
+        "import pandas as pd\n",
+        "import seaborn as sns\n",
+        "import matplotlib.pyplot as plt\n",
+        "import re\n",
+        "\n",
+        "from sklearn.pipeline import Pipeline\n",
+        "from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer\n",
+        "from sklearn.metrics.pairwise import cosine_similarity\n",
+        "from sklearn.neighbors import NearestNeighbors\n",
+        "from sklearn.decomposition import PCA\n",
+        "from sklearn.linear_model import LogisticRegression\n",
+        "from sklearn.model_selection import GridSearchCV\n",
+        "\n",
+        "import gensim\n",
+        "from gensim import corpora\n",
+        "from gensim.models.ldamulticore import LdaMulticore\n",
+        "import pyLDAvis\n",
+        "import pyLDAvis.gensim\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 4,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "6b8ad4a1ac317df7b82aced26eee406f",
+          "grade": true,
+          "grade_id": "cell-be1ef923d085ceb5",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "IMIARwaAB3aF",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "0421a6fd-ffae-443d-9ac5-11e0271d495d"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Visible Testing\n",
+        "assert pd.__package__ == 'pandas'\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "11b700564f5d76c1ec246d8fece821c1",
+          "grade": false,
+          "grade_id": "cell-c94bee05bece8c59",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "vct2l9AHB3aF"
+      },
+      "source": [
+        "\n",
+        "\n",
+        "### Part 0: Import Data"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 5,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "150e28699f961709cb59be5e0f8ddbe0",
+          "grade": false,
+          "grade_id": "cell-395851cd95d17235",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "I5lRu6KmB3aG",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "eb6760f0-82d9-465f-9128-de7e436f161e"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Index(['business_id', 'cool', 'date', 'funny', 'review_id', 'stars', 'text',\n",
+            "       'useful', 'user_id'],\n",
+            "      dtype='object')\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Load reviews from URL\n",
+        "data_url = 'https://raw.githubusercontent.com/bloominstituteoftechnology/data-science-practice-datasets/main/unit_4/unit1_nlp/review_sample.json'\n",
+        "\n",
+        "# Import data into a DataFrame named df\n",
+        "# YOUR CODE HERE\n",
+        "\n",
+        "df = pd.read_json(data_url, lines=True)\n",
+        "df.head()\n",
+        "print(df.columns)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 6,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "356579363f311da83f4ef7abaf3c9212",
+          "grade": true,
+          "grade_id": "cell-cb5006475e42b8f9",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "-7LEAjZKB3aG",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "7a566be9-8fa9-45e8-c8de-919aa7b1c480"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Visible Testing\n",
+        "assert isinstance(df, pd.DataFrame), 'df is not a DataFrame. Did you import the data into df?'\n",
+        "assert df.shape[0] == 10000, 'DataFrame df has the wrong number of rows.'"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "aedd47e33e28a74846b51e236deef316",
+          "grade": false,
+          "grade_id": "cell-27dc6b438d2f2722",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "DJLI8urpB3aH"
+      },
+      "source": [
+        "## Part 1: Tokenize Function\n",
+        "<a id=\"#p1\"></a>\n",
+        "\n",
+        "Complete the function `tokenize`. Your function should\n",
+        "- Accept one document at a time\n",
+        "- Return a list of tokens\n",
+        "\n",
+        "You are free to use any method you have learned this week.\n",
+        "\n",
+        "**TO PASS CODEGRADE RUNTIME:**\n",
+        "- Do not run your tokenize function more than one time in your notebook! It is not needed until Part 4!"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 7,
+      "metadata": {
+        "id": "-99hQiLfB3aH",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "0a973b1c-eeda-47e9-f860-c0a60ea421b9"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Optional: Consider using spaCy in your function. The spaCy library can be imported by running this cell.\n",
+        "# A pre-trained model (en_core_web_sm) has been made available to you in the CodeGrade container.\n",
+        "# If you DON'T need use the en_core_web_sm model, you can comment it out below.\n",
+        "\n",
+        "nlp = spacy.load('en_core_web_sm')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 8,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "4837ed2a1cc13057ba40203859d46ff6",
+          "grade": false,
+          "grade_id": "cell-3d570d5a1cd6cb64",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "gFvNIMInB3aI",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "bc394a3f-106f-4545-92c7-46e75d399dd4"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "def tokenize(doc):\n",
+        "# YOUR CODE HERE\n",
+        "  clean = re.sub('[^a-zA-Z ]', '', doc)\n",
+        "  tok_list = [x.lower() for x in clean.split() if len(x) >2]\n",
+        "  return tok_list\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 9,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "2181ca9d36070260b1f75dcfd9e58965",
+          "grade": true,
+          "grade_id": "cell-02da164f6fbe730a",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "XBslRMUgB3aJ",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "06f61198-3e8b-45b7-8e9a-b65756eba2c4"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "'''Testing'''\n",
+        "assert isinstance(tokenize(df.sample(n=1)[\"text\"].iloc[0]), list), \"Make sure your tokenizer function accepts a single document and returns a list of tokens!\""
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "d4137c3ea2fa84821d1dbf1b28dde6dd",
+          "grade": false,
+          "grade_id": "cell-ef13337bc7694c52",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "-dtaO1KrB3aJ"
+      },
+      "source": [
+        "## Part 2: Vector Representation\n",
+        "<a id=\"#p2\"></a>\n",
+        "1. Create a vector representation of the reviews (i.e. create a doc-term matrix).\n",
+        "    * Name that doc-term matrix `dtm`"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 10,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "fefca7db0abb1474d316d6aa24e032f8",
+          "grade": false,
+          "grade_id": "cell-0e96491cb529202c",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "TPD5eXTjB3aJ",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "3664112d-b58f-493e-f6aa-82c4eb5a64ac"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "CPU times: user 7.76 ms, sys: 112 µs, total: 7.87 ms\n",
+            "Wall time: 23.1 ms\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "%%time\n",
+        "# YOUR CODE HERE\n",
+        "tfidf = TfidfVectorizer(stop_words= 'english', max_features = 5000)\n",
+        "dtm = tfidf.fit_transform(df)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "86048b7ea6cb011227aefa5a8f7a9e65",
+          "grade": false,
+          "grade_id": "cell-33c058ea193687c3",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "jn3WK8rcB3aJ"
+      },
+      "source": [
+        "\n",
+        "2. Write a fake review. Assign the text of the review to an object called `fake_review`.\n",
+        "3. Query the fake review for the 10 most similar reviews, print the text of the reviews.\n",
+        "    - Given the size of the dataset, use `NearestNeighbors` model for this. Name the model `nn`."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 11,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "f6aa466983420c836879d744ffa6c9a8",
+          "grade": false,
+          "grade_id": "cell-3d5bc610a8ec6b24",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "O6pHBC3UB3aK",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 131
+        },
+        "outputId": "9a4a0369-3445-4578-8b9f-a47b897fd92f"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "NearestNeighbors(n_neighbors=10)"
+            ],
+            "text/html": [
+              "<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>NearestNeighbors(n_neighbors=10)</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" checked><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">NearestNeighbors</label><div class=\"sk-toggleable__content\"><pre>NearestNeighbors(n_neighbors=10)</pre></div></div></div></div></div>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 11
+        }
+      ],
+      "source": [
+        "# Create and fit a NearestNeighbors model named \"nn\"\n",
+        "# YOUR CODE HERE\n",
+        "\n",
+        "nn = NearestNeighbors(n_neighbors=10)\n",
+        "nn.fit(dtm)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 12,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "d270ed23df3c7d3c6cf08ab174ccaf9e",
+          "grade": true,
+          "grade_id": "cell-c43704dcff67e99b",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "-G_ZEQ6UB3aK",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "e9bcf523-b854-4246-c6d8-68b96e77f3af"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "'''Testing.'''\n",
+        "assert nn.__module__ == 'sklearn.neighbors._unsupervised', ' nn is not a NearestNeighbors instance.'\n",
+        "assert nn.n_neighbors == 10, 'nn has the wrong value for n_neighbors'"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 13,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "3da2ced9f187ed0aa1a890785e2ba00e",
+          "grade": false,
+          "grade_id": "cell-496203e8746296ca",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "6u5IQNXoB3aK",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "5696ca27-8dd7-47d1-8132-ec4082f8e237"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Create a fake review to object fake_review\n",
+        "# YOUR CODE HERE\n",
+        "fake_review = \"This product was great! I loved the quality and materials used to make this imaginary product!\"\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 14,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "33e150190aa62764e07f1f6c66bb9393",
+          "grade": true,
+          "grade_id": "cell-203092260fb65165",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "Do4EHYBaB3aK",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "2b9d7a4d-7163-41b0-b7b1-5189019838a0"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Visible Testing\n",
+        "assert isinstance(fake_review, str), \"Did you write a review in the correct data type?\""
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "lvuTZJiIB3aK"
+      },
+      "source": [
+        "## Part 3: Classification\n",
+        "<a id=\"#p3\"></a>\n",
+        "Your goal in this section will be to predict `stars` from the review dataset.\n",
+        "\n",
+        "1. Create a pipeline object with a sklearn `CountVectorizer` or `TfidfVector` and any sklearn classifier.\n",
+        "    - Use that pipeline to train a model to predict the `stars` feature (i.e. the labels).\n",
+        "    - Use that pipeline to predict a star rating for your fake review from Part 2.\n",
+        "\n",
+        "\n",
+        "\n",
+        "2. Create a parameter dict including `one parameter for the vectorizer` and `one parameter for the model`.\n",
+        "    - Include 2 possible values for each parameter\n",
+        "        - **Keep the values for each parameter low. Extreme values will compromise runtime**\n",
+        "    - **Use `n_jobs` = 1**\n",
+        "    - Due to limited computational resources on CodeGrader `DO NOT INCLUDE ADDITIONAL PARAMETERS OR VALUES PLEASE.`\n",
+        "    \n",
+        "    \n",
+        "3. Train the entire pipeline with a GridSearch\n",
+        "    - Name your GridSearch object as `gs`"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 15,
+      "metadata": {
+        "deletable": false,
+        "jupyter": {
+          "outputs_hidden": true
+        },
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "b3492e82185541e6a463f46b16baff94",
+          "grade": false,
+          "grade_id": "cell-e2beb0252d274bba",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "GaOxUS98B3aL",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        },
+        "outputId": "1edce8e0-9cfc-4efb-8ca5-07d5eb280ef1"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:458: ConvergenceWarning: lbfgs failed to converge (status=1):\n",
+            "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.\n",
+            "\n",
+            "Increase the number of iterations (max_iter) or scale the data as shown in:\n",
+            "    https://scikit-learn.org/stable/modules/preprocessing.html\n",
+            "Please also refer to the documentation for alternative solver options:\n",
+            "    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression\n",
+            "  n_iter_i = _check_optimize_result(\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "GridSearchCV(estimator=Pipeline(steps=[('vect', TfidfVectorizer()),\n",
+              "                                       ('clf', LogisticRegression())]),\n",
+              "             n_jobs=1,\n",
+              "             param_grid={'clf__C': (0.1, 0.5, 1), 'clf__max_iter': (1, 50),\n",
+              "                         'vect__max_df': (0.25, 0.5)})"
+            ],
+            "text/html": [
+              "<style>#sk-container-id-2 {color: black;background-color: white;}#sk-container-id-2 pre{padding: 0;}#sk-container-id-2 div.sk-toggleable {background-color: white;}#sk-container-id-2 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-2 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-2 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-2 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-2 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-2 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-2 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-2 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-2 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-2 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-2 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-2 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-2 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-2 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-2 div.sk-item {position: relative;z-index: 1;}#sk-container-id-2 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-2 div.sk-item::before, #sk-container-id-2 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-2 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-2 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-2 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-2 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-2 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-2 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-2 div.sk-label-container {text-align: center;}#sk-container-id-2 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-2 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-2\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>GridSearchCV(estimator=Pipeline(steps=[(&#x27;vect&#x27;, TfidfVectorizer()),\n",
+              "                                       (&#x27;clf&#x27;, LogisticRegression())]),\n",
+              "             n_jobs=1,\n",
+              "             param_grid={&#x27;clf__C&#x27;: (0.1, 0.5, 1), &#x27;clf__max_iter&#x27;: (1, 50),\n",
+              "                         &#x27;vect__max_df&#x27;: (0.25, 0.5)})</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item sk-dashed-wrapped\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-2\" type=\"checkbox\" ><label for=\"sk-estimator-id-2\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">GridSearchCV</label><div class=\"sk-toggleable__content\"><pre>GridSearchCV(estimator=Pipeline(steps=[(&#x27;vect&#x27;, TfidfVectorizer()),\n",
+              "                                       (&#x27;clf&#x27;, LogisticRegression())]),\n",
+              "             n_jobs=1,\n",
+              "             param_grid={&#x27;clf__C&#x27;: (0.1, 0.5, 1), &#x27;clf__max_iter&#x27;: (1, 50),\n",
+              "                         &#x27;vect__max_df&#x27;: (0.25, 0.5)})</pre></div></div></div><div class=\"sk-parallel\"><div class=\"sk-parallel-item\"><div class=\"sk-item\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-3\" type=\"checkbox\" ><label for=\"sk-estimator-id-3\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">estimator: Pipeline</label><div class=\"sk-toggleable__content\"><pre>Pipeline(steps=[(&#x27;vect&#x27;, TfidfVectorizer()), (&#x27;clf&#x27;, LogisticRegression())])</pre></div></div></div><div class=\"sk-serial\"><div class=\"sk-item\"><div class=\"sk-serial\"><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-4\" type=\"checkbox\" ><label for=\"sk-estimator-id-4\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">TfidfVectorizer</label><div class=\"sk-toggleable__content\"><pre>TfidfVectorizer()</pre></div></div></div><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-5\" type=\"checkbox\" ><label for=\"sk-estimator-id-5\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">LogisticRegression</label><div class=\"sk-toggleable__content\"><pre>LogisticRegression()</pre></div></div></div></div></div></div></div></div></div></div></div></div>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 15
+        }
+      ],
+      "source": [
+        "# YOUR CODE HERE\n",
+        "vect = TfidfVectorizer()\n",
+        "classifier = LogisticRegression()\n",
+        "parameters = {\n",
+        "            'vect__max_df': (0.25, 0.5),\n",
+        "            'clf__C': (0.1, 0.5, 1),\n",
+        "            'clf__max_iter': (1, 50),\n",
+        "       }\n",
+        "pipe = Pipeline([('vect', vect), ('clf', classifier)])\n",
+        "\n",
+        "X = df['text']\n",
+        "y= df['stars']\n",
+        "\n",
+        "pipe.fit(X,y)\n",
+        "gs = GridSearchCV(pipe, parameters, n_jobs=1)\n",
+        "gs.fit(X,y)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "prediction = pipe.predict([fake_review])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "EdBQYQYbeSx7",
+        "outputId": "a5480ba1-c8aa-411b-b0c3-bbe81a869ef4"
+      },
+      "execution_count": 16,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 17,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "ada8e7da1ec21f54451752e97b8cec3e",
+          "grade": true,
+          "grade_id": "cell-d07134c6fe5d056e",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "drNtY1ugB3aL",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "9c0a626b-9c40-4a91-ae77-2998d82996db"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Visible Testing\n",
+        "prediction = gs.predict([\"This is your prediction statement.\"])[0]\n",
+        "assert prediction in df.stars.values, 'You gs object should be able to accept raw text within a list. Did you include a vectorizer in your pipeline?'"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "2990aa9aa4e9c3cf665cee4392cdab92",
+          "grade": false,
+          "grade_id": "cell-00b8cbd0b1b4ece5",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "u-Q0MnwiB3aL"
+      },
+      "source": [
+        "## Part 4: Topic Modeling\n",
+        "\n",
+        "Let's find out what those yelp reviews are saying! :D\n",
+        "\n",
+        "1. Estimate a LDA topic model of the review text\n",
+        "    - Set num_topics to `5`\n",
+        "    - Name your LDA model `lda`\n",
+        "2. Create 1-2 visualizations of the results\n",
+        "    - You can use the most important 3 words of a topic in relevant visualizations.\n",
+        "3. In markdown, write 1-2 paragraphs of analysis on the results of your topic model\n",
+        "\n",
+        "When you instantiate your LDA model, it should look like this:\n",
+        "\n",
+        "```python\n",
+        "lda = LdaModel(corpus=corpus,\n",
+        "               id2word=id2word,\n",
+        "               random_state=723812,\n",
+        "               num_topics = num_topics,\n",
+        "               passes=1\n",
+        "              )\n",
+        "\n",
+        "```\n",
+        "\n",
+        "__*Note*__: You can pass the DataFrame column of text reviews to gensim. You do not have to use a generator."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "9b07079124654b07cce6d10dae1912b6",
+          "grade": false,
+          "grade_id": "cell-9eee6fe0eeebb9a3",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "j-pHFe0LB3aL"
+      },
+      "source": [
+        "## Note about  pyLDAvis\n",
+        "\n",
+        "**pyLDAvis** is the Topic modeling package that we used in class to visualize the topics that LDA generates for us.\n",
+        "\n",
+        "You are welcomed to use pyLDAvis if you'd like for your visualization. However, **you MUST comment out the code that imports the package and the cell that generates the visualization before you submit your notebook to CodeGrade.**\n",
+        "\n",
+        "Although you should leave the print out of the visualization for graders to see (i.e. comment out the cell after you run it to create the viz)."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "58830f560044227aa07c22d463e1596c",
+          "grade": false,
+          "grade_id": "cell-ec7b71ad284832d4",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "4M7Qt-aCB3aL"
+      },
+      "source": [
+        "### 1. Estimate a LDA topic model of the review text\n",
+        "\n",
+        "* Use the `tokenize` function you created earlier to create tokens.\n",
+        "* Create an `id2word` object.\n",
+        "> Hint: Use `corpora.Dictionary`\n",
+        "* Create a `corpus` object.\n",
+        "> Hint: Use `id2word.doc2bow`\n",
+        "* Instantiate an `lda` model.\n",
+        "\n",
+        ">> Remember to read the LDA docs for more information on the various class attributes and methods available to you in the LDA model: https://radimrehurek.com/gensim/models/ldamodel.html"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 18,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "bef17fce3f84cc31020898134cfdaec1",
+          "grade": false,
+          "grade_id": "cell-b4df1a20c7947a8b",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "hrSTCkdvB3aL",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "150afd6c-f47b-4049-c9ad-b993800c2fea"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Do not change this value\n",
+        "num_topics = 5"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 19,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "fb50f495592df233d97bd4199b958404",
+          "grade": false,
+          "grade_id": "cell-66331a185ff52f15",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "yqTRUgt1B3aL",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "21bc02c6-5342-40bf-b056-fb3b4ec5eda1"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n",
+            "WARNING:gensim.models.ldamodel:too few updates, training might not converge; consider increasing the number of passes or iterations to improve accuracy\n"
+          ]
+        }
+      ],
+      "source": [
+        "# YOUR CODE HERE\n",
+        "token_df = [tokenize(text) for text in df]\n",
+        "id2word = corpora.Dictionary(token_df)\n",
+        "corpus = [id2word.doc2bow(doc) for doc in token_df]\n",
+        "LdaModel = gensim.models.ldamodel.LdaModel\n",
+        "lda = LdaModel(corpus=corpus,\n",
+        "               id2word=id2word,\n",
+        "               random_state=723812,\n",
+        "               num_topics = num_topics,\n",
+        "               passes=1\n",
+        "              )"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "AJbsflFMB3aM"
+      },
+      "source": [
+        "#### Testing"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 20,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "073be746ce974f75f29c2c92f35af430",
+          "grade": true,
+          "grade_id": "cell-5a3c181311134fa9",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "jk72M2G1B3aM",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "59ca6e16-268f-4d9a-e1bb-ed438505ce38"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Visible Testing\n",
+        "\n",
+        "assert lda.get_topics().shape[0] == 5, 'Did your model complete its training? Did you set num_topics to 5?'"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Hu15LGBtB3aM"
+      },
+      "source": [
+        "#### 2. Create 2 visualizations of the results:\n",
+        "1. Create a visualization using pyLDAvis. Run the cell, then comment out your code before submission, leaving the visualization in the cell.\n",
+        "\n",
+        "2. Create a visualization using the matplotlib library and utilizing the subplots function. Assign this visualization to a variable called `visual_plot`.\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 21,
+      "metadata": {
+        "id": "Yo21ExriB3aM",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "f26b2fc5-0b8a-4f93-da1d-b7e6247dff62"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Cell for pyLDAvis visualization\n",
+        "# YOUR CODE HERE\n",
+        "#doc_term_matrix = [id2word.doc2bow(doc) for doc in token_df]\n",
+        "#pyLDAvis.enable_notebook()\n",
+        "#pyLDAvis.gensim.prepare(lda, doc_term_matrix, id2word)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 22,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "2cb1397c6a59aa5751d77bad34994f29",
+          "grade": false,
+          "grade_id": "cell-9b043e992fbd218c",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "JVrz_fkJB3aM",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 507
+        },
+        "outputId": "a5458654-c626-4421-acca-dec2ab02b266"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<Figure size 1500x500 with 2 Axes>"
+            ],
+            "image/png": "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Zc+ePdlsBgAAAABkJasQLT8/P2bOnNnjpQDvviSgsrLyiOPuvffeWLZsWTQ0NMSsWbNS1/PSSy/Fa6+9FhMnTuz184KCghgzZkyPBQAAAAAGS9Zv56ytrY21a9fGAw88EM8++2xcc8010dHRETU1NRERsWDBgliyZEmm/z333BN33HFHrFu3LsrKyqKlpSVaWlrijTfeiIiIN954I77xjW/Ek08+Gbt27YrGxsa49NJL49RTT43q6uoB2kwAAAAA6L+svxNt3rx5sW/fvli6dGm0tLREeXl5NDQ0ZF42sHv37sjNfS+bu++++6Krqyu++MUv9pinrq4u7rzzzsjLy4tf//rX8cADD8SBAwdi0qRJceGFF8ayZcuioKDgKDcPAAAAAI5eTpIkyXAXcbTa29ujqKgo2trahvTRzrLFG4dsXQBkZ9fyi4e7BEaA4bqGIDuOEwCQrcG4fsj6cU4AAAAA+KgRogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKQQogEAAABACiEaAAAAAKToV4i2evXqKCsri8LCwqioqIgtW7Ycse/atWvj/PPPj3HjxsW4ceOiqqrqff2TJImlS5fGxIkT4/jjj4+qqqr4/e9/35/SAAAAAGDAZR2ibdiwIWpra6Ouri62bdsWM2bMiOrq6ti7d2+v/ZuammL+/Pnx2GOPRXNzc5SWlsaFF14YL7/8cqbPvffeG9/5zndizZo1sXnz5vjYxz4W1dXV8eabb/Z/ywAAAABggOQkSZJkM6CioiI++9nPxve+972IiOju7o7S0tL46le/GosXL04df/jw4Rg3blx873vfiwULFkSSJDFp0qT42te+Fl//+tcjIqKtrS2Ki4vj/vvvj8suuyx1zvb29igqKoq2trYYM2ZMNptzVMoWbxyydQGQnV3LLx7uEhgBhusaguw4TgBAtgbj+iGrO9G6urpi69atUVVV9d4EublRVVUVzc3NfZrj0KFD8dZbb8VJJ50UERE7d+6MlpaWHnMWFRVFRUXFEefs7OyM9vb2HgsAAAAADJasQrT9+/fH4cOHo7i4uEd7cXFxtLS09GmOW265JSZNmpQJzd4dl82c9fX1UVRUlFlKS0uz2QwAAAAAyMqQvp1z+fLlsX79+njwwQejsLCw3/MsWbIk2traMsuePXsGsEoAAD5INi+Ziog4cOBAXHfddTFx4sQoKCiI008/PTZt2jRE1QIADIxR2XQeP3585OXlRWtra4/21tbWKCkp+cCxK1asiOXLl8cvf/nLmD59eqb93XGtra0xceLEHnOWl5f3OldBQUEUFBRkUzoAAAPg3ZdMrVmzJioqKmLVqlVRXV0dzz//fEyYMOF9/bu6uuJP//RPY8KECfH3f//3MXny5PjXf/3XGDt27NAXDwBwFLK6Ey0/Pz9mzpwZjY2Nmbbu7u5obGyMysrKI4679957Y9myZdHQ0BCzZs3q8dnJJ58cJSUlPeZsb2+PzZs3f+CcAAAMvZUrV8aiRYuipqYmpk2bFmvWrInRo0fHunXreu2/bt26eP311+Ohhx6Kc889N8rKyuKCCy6IGTNmDHHlAABHJ+vHOWtra2Pt2rXxwAMPxLPPPhvXXHNNdHR0RE1NTURELFiwIJYsWZLpf88998Qdd9wR69ati7KysmhpaYmWlpZ44403IiIiJycnbrzxxvjmN78ZDz/8cDz99NOxYMGCmDRpUsydO3dgthIAgKPWn5dMPfzww1FZWRnXXXddFBcXx5lnnhl33313HD58+Ijr8RIpAOBYlNXjnBER8+bNi3379sXSpUujpaUlysvLo6GhIfNigN27d0du7nvZ3H333RddXV3xxS9+scc8dXV1ceedd0ZExM033xwdHR1x9dVXx4EDB+K8886LhoaGo/reNAAABtYHvWTqueee63XMiy++GI8++mhcccUVsWnTptixY0dce+218dZbb0VdXV2vY+rr6+Ou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UYNR5ojS1dUVW7dujaqqqkxbbm5uVFVVRXNzc69jmpube/SPiKiurj5if/q3n//QoUOH4q233oqTTjppsMoc8fq7n//yL/8yJkyYEFddddVQlDni9Wc/P/zww1FZWRnXXXddFBcXx5lnnhl33313HD58eKjKhl45Dx77nENHBufgY5/z98jQn+N0zjnnxNatWzOPfL744ouxadOm+PznPz8kNdM3A3H98KFJMFpaWmLChAk92kaNGhUnnXRStLS0HHHcTTfdFOecc05ceumlg13ih0J/9/O/t3///li2bFlcffXVg1HiiLN///44fPhwFBcX92gvLi6O5557rtcxLS0tvfbv6zH4KOrPfv5Dt9xyS0yaNOl9f/Hynv7s58cffzx++MMfxvbt24egwg+H/uznF198MR599NG44oorYtOmTbFjx4649tpr46233oq6urqhKBt65Tx47HMOHRmcg499zt8jQ3+O0+WXXx779++P8847L5Ikibfffju+8pWvxK233joUJdNHR7p+aG9vj3/7t3+L448/PnWOY/5OtMWLF0dOTs4HLn09ef+hhx9+OB599NFYtWrVwBY9Ag3mfv732tvb4+KLL45p06bFnXfeefSFwxBZvnx5rF+/Ph588MEoLCwc7nI+NA4ePBhXXnllrF27NsaPHz/c5XyodXd3x4QJE+Kv//qvY+bMmTFv3ry47bbbYs2aNcNdGvAh5xx6bHIOHhmcv0eGpqamuPvuu+P73/9+bNu2LX7+85/Hxo0bY9myZcNdGgPsmL8T7Wtf+1p86Utf+sA+U6ZMiZKSkti7d2+P9rfffjtef/31Iz6m+eijj8YLL7wQY8eO7dH+hS98Ic4///xoamo6ispHlsHcz+86ePBgzJkzJ0488cR48MEH47jjjjvasj8Uxo8fH3l5edHa2tqjvbW19Yj7tKSkJKv+9G8/v2vFihWxfPny+OUvfxnTp08fzDJHvGz38wsvvBC7du2KSy65JNPW3d0dEe/c5fr888/HKaecMrhFj0D9+X2eOHFiHHfccZGXl5dp+9SnPhUtLS3R1dUV+fn5g1ozHInz4LHPOXRkcA4+9jl/jwz9OU533HFHXHnllfHlL385IiLOOuus6OjoiKuvvjpuu+22yM095u9f+kg40vXDmDFj+nQXWsQIuBPt4x//eEydOvUDl/z8/KisrIwDBw7E1q1bM2MfffTR6O7ujoqKil7nXrx4cfz617+O7du3Z5aIiP/xP/5H/M3f/M1QbN4xYzD3c8Q7d6BdeOGFkZ+fHw8//LB/hfx38vPzY+bMmdHY2Jhp6+7ujsbGxqisrOx1TGVlZY/+ERGPPPLIEfvTv/0cEXHvvffGsmXLoqGhocd3AdK7bPfz1KlT4+mnn+7x9/Cf/dmfxec+97nYvn17lJaWDmX5I0Z/fp/PPffc2LFjR+Z/kCIifve738XEiRNdgDOsnAePfc6hI4Nz8LHP+Xtk6M9xOnTo0PuCsneDz3e+855jwYBcP2T/zoNj15w5c5Kzzz472bx5c/L4448np512WjJ//vzM5y+99FJyxhlnJJs3bz7iHOHtnKmy3c9tbW1JRUVFctZZZyU7duxIXn311czy9ttvD9dmHFPWr1+fFBQUJPfff3/yzDPPJFdffXUyduzYpKWlJUmSJLnyyiuTxYsXZ/r/y7/8SzJq1KhkxYoVybPPPpvU1dUlxx13XPL0008P1yaMCNnu5+XLlyf5+fnJ3//93/f4vT148OBwbcKIkO1+/kPeDNY32e7n3bt3JyeeeGJy/fXXJ88//3zyD//wD8mECROSb37zm8O1CZDhPHjscw4dGZyDj33O3yNDtseprq4uOfHEE5Of/OQnyYsvvpj84z/+Y3LKKackf/EXfzFcm/CRcPDgweSpp55KnnrqqSQikpUrVyZPPfVU8q//+q9JkiTJ4sWLkyuvvDLT/8UXX0xGjx6dfOMb30ieffbZZPXq1UleXl7S0NDQ53V+qEK01157LZk/f35ywgknJGPGjElqamp6nKh37tyZRETy2GOPHXEOIVq6bPfzY489lkREr8vOnTuHZyOOQd/97neTT3ziE0l+fn4ye/bs5Mknn8x8dsEFFyQLFy7s0f+nP/1pcvrppyf5+fnJpz/96WTjxo1DXPHIlM1+/uQnP9nr721dXd3QFz7CZPv7/O+5gO+7bPfzE088kVRUVCQFBQXJlClTkr/6q7/yjxkcM5wHj33OoSODc/Cxz/l7ZMjmOL311lvJnXfemZxyyilJYWFhUlpamlx77bXJ//t//2/oC/8IOVLW8O6xWbhwYXLBBRe8b0x5eXmSn5+fTJkyJfmbv/mbrNaZkyTuLQQAAACAD3LMfycaAAAAAAw3IRoAAAAApBCiAQAAAEAKIRoAAAAApBCiAQAAAEAKIRoAAAAApBCiAQAAAEAKIRoAAAAApBCiAQAAAEAKIRoAAAAApBCiAQAAAEAKIRoAAAAApPj/6l8lngjwImwAAAAASUVORK5CYII=\n"
+          },
+          "metadata": {}
+        }
+      ],
+      "source": [
+        "# Cell for matplotlib visualzation\n",
+        "# YOUR CODE HERE\n",
+        "plt.subplots(1, 2, figsize=(15, 5))\n",
+        "plt.subplot(1, 2, 1)\n",
+        "visual_plot = plt.bar(lda.get_topics()[:, 0], lda.get_topics()[:, 1])"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 23,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "97e1c557c7e019c69cc2714b055fb767",
+          "grade": true,
+          "grade_id": "cell-f5fa579a25122b47",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "jRLdMYv4B3aM",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "cd45357e-d17f-4403-dcab-25d46398046f"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n",
+            "  and should_run_async(code)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Visible testing\n",
+        "assert visual_plot is not None, \"Variable 'visual_plot' is not created.\""
+      ]
+    }
+  ],
+  "metadata": {
+    "kernel_info": {
+      "name": "u4-s1-nlp"
+    },
+    "kernelspec": {
+      "display_name": "Python 3.10.2 64-bit",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.10.2"
+    },
+    "nteract": {
+      "version": "0.15.0"
+    },
+    "toc-autonumbering": false,
+    "vscode": {
+      "interpreter": {
+        "hash": "aee8b7b246df8f9039afb4144a1f6fd8d2ca17a180786b69acc140d282b71a49"
+      }
+    },
+    "colab": {
+      "provenance": [],
+      "include_colab_link": true
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
