@@ -17,25 +17,30 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 ### 💼 Skills
 
 - **Programming Languages:**
--             Python
+             Python
 - **Data Analysis and Visualization:**
--             Pandas, NumPy, Matplotlib, Seaborn, Plotly
+             Pandas, NumPy, Matplotlib, Seaborn, Plotly
 - **Machine Learning and AI:**
--             Scikit-learn, TensorFlow, Keras, XGBoost
+             Scikit-learn, TensorFlow, Keras, XGBoost
 - **Data Wrangling:**
--             SQLAlchemy
+             SQLAlchemy
 - **Databases:**
--             MySQL, PostgreSQL, MongoDB, SQLite
--**Development Tools:**
-              Visual Studio Code
+             MySQL, PostgreSQL, MongoDB, SQLite
+- **Development Tools:**
+             Visual Studio Code
+- **Visualization:**
+             Matplotlib, seaborn
 -
 ### 📫 How to Reach Me
 
-- LinkedIn: [Your LinkedIn Profile URL]
-- Twitter: [@YourTwitterHandle]
-- Email: [Your Email Address]
+- LinkedIn: www.linkedin.com/in/ajramos202
+- Email: ajramos202@gmail.com
 
-### 😄 Fun Fact
+### 😄 Fun Fact:
+I will geek out over anime!
+
+### Pronouns:
+She/They
 
 <!--
 **ajramos202/ajramos202** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
