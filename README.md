@@ -1,12 +1,12 @@
 <p align="center">The name's Ramos, Amanda Ramos</p>
 
-#### Greetings! 👋 I'm Amanda, a Data Scientist that is passionate about utilizing my skills to bring about changes in the
-#### accessibility of healthcare and justice. 
+#### Well met! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills to bring about changes in the
+#### accessibility of healthcare and justice.
 
 ### 🔭 What I'm Working On
 
 Currently, I'm focused on completing my education at Bloom Technical Institute. 
-I'm in the final stretch! There is nowhere to go but up from here!
+I'm in the final stretch! There is nowhere to go but up. 
 
 ### 🌱 What I'm Learning
 
