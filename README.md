@@ -32,8 +32,8 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 -
 ### 📫 How to Reach Me
 
-- [LinkedIn: ](www.linkedin.com/in/ajramos202)
-- [Email: ](ajramos202@gmail.com)
+- [LinkedIn](www.linkedin.com/in/ajramos202)
+- [Email](ajramos202@gmail.com)
 
 ### 😄 Fun Fact:
 I will geek out over anime. 
