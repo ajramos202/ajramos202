@@ -1,6 +1,7 @@
 ## About Me
 
-Greetings! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills to bring about changes in the accessibility of healthcare. 
+### ***Greetings! 👋 I'm Amanda, a Data Scientist that is passionate about utilizing my skills to bring about changes
+### in the accessibility of healthcare.***
 
 ### 🔭 What I'm Working On
 
@@ -31,8 +32,8 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 -
 ### 📫 How to Reach Me
 
-- LinkedIn: www.linkedin.com/in/ajramos202
-- Email: ajramos202@gmail.com
+- [LinkedIn: ](www.linkedin.com/in/ajramos202)
+- [Email: ](ajramos202@gmail.com)
 
 ### 😄 Fun Fact:
 I will geek out over anime!
