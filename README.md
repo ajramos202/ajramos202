@@ -1,4 +1,4 @@
-<p align="center">About Me</p>
+<p align="center">### ABOUT ME</p>
 
 #### Greetings! 👋 I'm Amanda, a Data Scientist that is passionate about utilizing my skills to bring about changes in the
 #### accessibility of healthcare and justice. 
