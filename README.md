@@ -1,4 +1,4 @@
-<p align="center">The name's Amanda, Amanda Ramos</p>
+<p align="center">The name's Ramos, Amanda Ramos</p>
 
 #### Greetings! 👋 I'm Amanda, a Data Scientist that is passionate about utilizing my skills to bring about changes in the
 #### accessibility of healthcare and justice. 
