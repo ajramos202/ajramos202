@@ -24,7 +24,7 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 - **Data Wrangling:**
              SQLAlchemy
 - **Databases:**
-             MySQL, PostgreSQL, MongoDB, SQLite
+             MySQL, PostgreSQL, SQLite
 - **Development Tools:**
              Visual Studio Code
 - **Visualization:**
