@@ -1,7 +1,7 @@
-## About Me
+# About Me
 
-### ***Greetings! 👋 I'm Amanda, a Data Scientist that is passionate about utilizing my skills to bring about changes
-### in the accessibility of healthcare.***
+#### Greetings! 👋 I'm Amanda, a Data Scientist that is passionate about utilizing my skills to bring about changes
+#### in the accessibility of healthcare.
 
 ### 🔭 What I'm Working On
 
