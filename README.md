@@ -36,7 +36,7 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 - [Email](ajramos202@gmail.com)
 
 ### 😄 Fun Fact:
-I will geek out over anime. 
+I'm caught up on One Piece so you know I have no problem with long term commitment!
 
 ### Pronouns:
 She/They
