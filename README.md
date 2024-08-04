@@ -1,7 +1,7 @@
 <p align="center">The name's Ramos, Amanda Ramos</p>
 
-#### Well met! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills to bring about changes in the
-#### accessibility of healthcare and justice.
+## Well met! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills to bring about changes in the
+## accessibility of healthcare and justice.
 
 ### 🔭 What I'm Working On
 
