@@ -1,11 +1,11 @@
 <p align="center">The name's Ramos, Amanda Ramos</p>
 
-## Well met! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills to bring about changes in the accessibility of healthcare and justice.
+## Well met! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills and creativity to bring about changes in the accessibility of mental healthcare and justice.
 
 ### 🔭 What I'm Working On
 
-Currently, I'm focused on completing my education at Bloom Technical Institute. 
-I'm in the final stretch! There is nowhere to go but up. 
+Currently, I am focusing on researching and reaching out to potential future employers. 
+I'm excited at all the opportunities that await! There is nowhere to go but up. 
 
 ### 🌱 What I'm Learning
 
@@ -23,7 +23,7 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 - **Data Wrangling:**
              SQLAlchemy
 - **Databases:**
-             MySQL, PostgreSQL, SQLite
+             MySQL, PostgreSQL, SQLite, MongoDB
 - **Development Tools:**
              Visual Studio Code
 - **Visualization:**
@@ -35,7 +35,7 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 - [Email](ajramos202@gmail.com)
 
 ### 😄 Fun Fact:
-I'm caught up on One Piece so you know I have no problem with long term commitment!
+I'm caught up on One Piece so you know I have no problem with a long term commitment!
 
 ### Pronouns:
 She/They
