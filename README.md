@@ -4,8 +4,9 @@
 
 ### 🔭 What I'm Working On
 
-Currently, I am focusing on researching and reaching out to potential future employers. 
-I'm excited at all the opportunities that await! There is nowhere to go but up. 
+I’m diving deep into the fascinating world of data science, exploring its many facets—from analytics to machine learning and beyond. Every project is a new opportunity to grow, solve problems, and uncover insights.
+
+The journey has just begun, and I’m thrilled about the endless possibilities ahead. There’s no limit to what we can achieve with curiosity and determination!
 
 ### 🌱 What I'm Learning
 
