@@ -1,19 +1,20 @@
-<p align="center">The name's Ramos, Amanda Ramos</p>
+<p align="center">🌟 The name's Ramos, <strong>Amanda Ramos</strong> 🌟</p>
 
-## Well met! 👋 I'm Amanda, a Data Scientist passionate about utilizing my skills and creativity to bring about changes in the accessibility of mental healthcare and justice.
 
-### 🔭 What I'm Working On
+## Well met! 👋 I'm Amanda, a Data Scientist passionate about combining technical expertise and creativity to drive change, particularly in making mental healthcare more accessible and advancing justice.
+
+### 💻 What I'm Working On
 
 I’m diving deep into the fascinating world of data science, exploring its many facets—from analytics to machine learning and beyond. Every project is a new opportunity to grow, solve problems, and uncover insights.
 
 The journey has just begun, and I’m thrilled about the endless possibilities ahead. There’s no limit to what we can achieve with curiosity and determination!
 
-### 🌱 What I'm Learning
+### 🪴 What I'm Learning
 
 I'm currently learning how to utilize OpenAI to build a bot that tells elaborate stories. I am also refreshing my knowledge on
 linked lists and binary search trees. Always eager to expand my knowledge and explore new technologies!
 
-### 💼 Skills
+### 😎 Skills
 
 - **Programming Languages:**
              Python
@@ -30,13 +31,13 @@ linked lists and binary search trees. Always eager to expand my knowledge and ex
 - **Visualization:**
              Matplotlib, seaborn
 
-### 📫 How to Reach Me
+### 📲 How to Reach Me
 
 - [LinkedIn](www.linkedin.com/in/ajramos202)
 - [Email](ajramos202@gmail.com)
 
-### 😄 Fun Fact:
-I'm caught up on One Piece so you know I have no problem with a long term commitment!
+### 🐦‍🔥 Fun Fact:
+I’m all caught up on One Piece! So, if you’re looking for someone with commitment, perseverance, and a sense of adventure—you’ve found the right person!
 
 ### Pronouns:
 She/They
